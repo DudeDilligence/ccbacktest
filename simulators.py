@@ -123,13 +123,13 @@ def fng(fng_df: pd.DataFrame, data_df: pd.DataFrame, wallet: Wallets.Wallet, qua
 
     for index, row in fng_df.iterrows():
 
-        days_below_buy_threshold += 1 if row.value <= buy_threshold else 0
-        days_above_sell_threshold += 1 if row.value >= sell_threshold else 0
+        days_below_buy_threshold = days_below_buy_threshold + 1 if row.value <= buy_threshold else 0
+        days_above_sell_threshold = days_above_sell_threshold + 1 if row.value >= sell_threshold else 0
 
         if buy and days_below_buy_threshold >= buy_threshold_filter:
             buy_timestamp = index + pd.Timedelta(hours=10)
             rate = data_df.loc[buy_timestamp]['open']
-            wallet.buy(quantum, rate)
+            wallet.buy(wallet.quote, rate)  # buy with everything we've got
             buy = False
 
             print(f'{buy_timestamp}: BUY   @ {rate:.7f}, {wallet.quote:05.7f} [quote], {wallet.base:05.7f} [base]')
@@ -137,7 +137,7 @@ def fng(fng_df: pd.DataFrame, data_df: pd.DataFrame, wallet: Wallets.Wallet, qua
         elif not buy and days_above_sell_threshold >= sell_threshold_filter:
             buy_timestamp = index + pd.Timedelta(hours=10)
             rate = data_df.loc[buy_timestamp]['open']
-            wallet.sell(wallet.history[-1][2] / wallet.history[-1][1] * (1 - wallet.fee) - 0.0001 / rate, rate)
+            wallet.sell(wallet.base, rate)  # sell everything we've got
             buy = True
 
             print(f'{buy_timestamp}: SELL @ {rate:.7f}, {wallet.quote:05.7f} [quote], {wallet.base:05.7f} [base]')
